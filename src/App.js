@@ -8,9 +8,11 @@ export default function App() {
   * Just a state variable we use to store our user's public wallet.
   */
   const [currentAccount, setCurrentAccount] = useState("");
+  const [allWaves, setAllWaves] = useState([]);
   const [status, setStatus] = useState("");
+  const [message, setMessage] = useState("");
 
-  const contractAddress = '0x772B25e744c7f0173302A137F60998F3c34ed7C9';
+  const contractAddress = '0x8f2C6E6262B5d4a876E4F2BF6bf7686a41f37df0';
   const contractABI = abi.abi;
 
   const updateStatus = (msg) => {
@@ -41,7 +43,47 @@ export default function App() {
       }
     }
 
-    
+    /*
+   * Create a method that gets all waves from your contract
+   */
+  const getAllWaves = async () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        /*
+         * Call the getAllWaves method from your Smart Contract
+         */
+        const waves = await wavePortalContract.getAllWaves();
+        
+
+        /*
+         * We only need address, timestamp, and message in our UI so let's
+         * pick those out
+         */
+        let wavesCleaned = [];
+        waves.forEach(wave => {
+          wavesCleaned.push({
+            address: wave.waver,
+            timestamp: new Date(wave.timestamp * 1000),
+            message: wave.message
+          });
+        });
+
+        /*
+         * Store our data in React State
+         */
+        setAllWaves(wavesCleaned);
+      } else {
+        console.log("Ethereum object doesn't exist!")
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
   
     const wave = async () => {
       try {
@@ -53,19 +95,22 @@ export default function App() {
           const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
   
           let count = await wavePortalContract.getTotalWaves();
-          updateStatus(`Retrieved total wave count... ${count.toNumber()}`);
+          updateStatus(`Retrieved total wisdom count... ${count.toNumber()}`);
   
           /*
           * Execute the actual wave from your smart contract
           */
-          const waveTxn = await wavePortalContract.wave();
+          const waveTxn = await wavePortalContract.wave(message);
           updateStatus(`Mining... ${waveTxn.hash}`);
+          setMessage("");
   
           await waveTxn.wait();
           updateStatus(`Mined --  ${waveTxn.hash}`);
   
           count = await wavePortalContract.getTotalWaves();
-          updateStatus(`Retrieved total wave count... ${count.toNumber()}`);
+          updateStatus(`Retrieved total wisdom count... ${count.toNumber()}`);
+
+          getAllWaves();
         } else {
           console.log("Ethereum object doesn't exist!");
         }
@@ -73,7 +118,9 @@ export default function App() {
         console.log(error)
       }
     }
+  
     
+
   /*
   * This runs our function when the page loads.
   */
@@ -98,7 +145,8 @@ export default function App() {
         if (accounts.length !== 0) {
           const account = accounts[0];
           updateStatus(`Found an authorized account: ${account}`);
-          setCurrentAccount(account)
+          setCurrentAccount(account);
+          getAllWaves();
         } else {
           updateStatus("No authorized account found");
         }
@@ -108,6 +156,7 @@ export default function App() {
     }
 
     checkIfWalletIsConnected();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   
   return (
@@ -119,14 +168,23 @@ export default function App() {
         </div>
 
         <div className="bio">
-        I am Simba and here my dear friends, Timon and Pumba. They tought me the word of wisdom, 'Hakuna Matata!'. Connect your Ethereum wallet and wave at me!
+        I am Simba and here my dear friends, Timon and Pumba. They tought me the words of wisdom, 'Hakuna Matata!'. Now, I want to learn more. Connect your Ethereum wallet and teach me your words of wisdom!
         </div>
         <br />
 
         <img src='/The-Lion-King2.jpeg' alt='Lion King' />
-
+        <br />
+        <textarea 
+          rows="3" 
+          type="text" 
+          onChange={e => {
+            e.preventDefault();
+            setMessage(e.target.value);
+            }} 
+          value={message} 
+          placeholder="Teach Me Some Words of Wisdom"/>
         <button className="waveButton" onClick={wave}>
-          Wave at Me, Hakuna Matata!
+          Click to Send. Hakuna Matata!
         </button>
 
         {/*
@@ -144,6 +202,15 @@ export default function App() {
         <div className="status">
           <p>{status}</p>
         </div>
+
+        {allWaves.map((wave, index) => {
+          return (
+            <div key={index} style={{ backgroundColor: "OldLace", marginTop: "16px", padding: "8px" }}>
+              <div>Address: {wave.address}</div>
+              <div>Time: {wave.timestamp.toString()}</div>
+              <div>Message: {wave.message}</div>
+            </div>)
+        })}
       </div>
     </div>
   );
