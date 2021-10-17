@@ -12,7 +12,7 @@ export default function App() {
   const [status, setStatus] = useState("");
   const [message, setMessage] = useState("");
 
-  const contractAddress = '0x8f2C6E6262B5d4a876E4F2BF6bf7686a41f37df0';
+  const contractAddress = '0xB839718D63B1918BFacE1987862D121417C602dD';
   const contractABI = abi.abi;
 
   const updateStatus = (msg) => {
