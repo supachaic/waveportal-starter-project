@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+// import { ethers } from "ethers";
 import './App.css';
 
 export default function App() {
@@ -13,7 +13,7 @@ export default function App() {
 
       <div className="dataContainer">
         <div className="header">
-        👋 Hakuna Matata!
+        <span role="img" aria-label='wave'>👋</span> Hakuna Matata!
         </div>
 
         <div className="bio">
