@@ -8,37 +8,17 @@ export default function App() {
   * Just a state variable we use to store our user's public wallet.
   */
   const [currentAccount, setCurrentAccount] = useState("");
+  const [status, setStatus] = useState("");
 
   const contractAddress = '0x772B25e744c7f0173302A137F60998F3c34ed7C9';
   const contractABI = abi.abi;
-  
-  const checkIfWalletIsConnected = async () => {
-    try {
-      const { ethereum } = window;
-      
-      if (!ethereum) {
-        console.log("Make sure you have metamask!");
-        return;
-      } else {
-        console.log("We have the ethereum object", ethereum);
-      }
-      
-      /*
-      * Check if we're authorized to access the user's wallet
-      */
-      const accounts = await ethereum.request({ method: 'eth_accounts' });
-      
-      if (accounts.length !== 0) {
-        const account = accounts[0];
-        console.log("Found an authorized account:", account);
-        setCurrentAccount(account)
-      } else {
-        console.log("No authorized account found")
-      }
-    } catch (error) {
-      console.log(error);
-    }
+
+  const updateStatus = (msg) => {
+    setStatus(msg);
+    console.log(msg);
   }
+  
+  
 
    /**
   * Implement your connectWallet method here
@@ -60,6 +40,8 @@ export default function App() {
         console.log(error)
       }
     }
+
+    
   
     const wave = async () => {
       try {
@@ -71,19 +53,19 @@ export default function App() {
           const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
   
           let count = await wavePortalContract.getTotalWaves();
-          console.log("Retrieved total wave count...", count.toNumber());
+          updateStatus(`Retrieved total wave count... ${count.toNumber()}`);
   
           /*
           * Execute the actual wave from your smart contract
           */
           const waveTxn = await wavePortalContract.wave();
-          console.log("Mining...", waveTxn.hash);
+          updateStatus(`Mining... ${waveTxn.hash}`);
   
           await waveTxn.wait();
-          console.log("Mined -- ", waveTxn.hash);
+          updateStatus(`Mined --  ${waveTxn.hash}`);
   
           count = await wavePortalContract.getTotalWaves();
-          console.log("Retrieved total wave count...", count.toNumber());
+          updateStatus(`Retrieved total wave count... ${count.toNumber()}`);
         } else {
           console.log("Ethereum object doesn't exist!");
         }
@@ -95,9 +77,38 @@ export default function App() {
   /*
   * This runs our function when the page loads.
   */
-    useEffect(() => {
-      checkIfWalletIsConnected();
-    }, [])
+  useEffect(() => {
+    const checkIfWalletIsConnected = async () => {
+      try {
+        const { ethereum } = window;
+        
+        if (!ethereum) {
+          updateStatus("Make sure you have metamask!");
+          return;
+        } else {
+          updateStatus("We have the ethereum object");
+          console.log(ethereum);
+        }
+        
+        /*
+        * Check if we're authorized to access the user's wallet
+        */
+        const accounts = await ethereum.request({ method: 'eth_accounts' });
+        
+        if (accounts.length !== 0) {
+          const account = accounts[0];
+          updateStatus(`Found an authorized account: ${account}`);
+          setCurrentAccount(account)
+        } else {
+          updateStatus("No authorized account found");
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    checkIfWalletIsConnected();
+  }, [])
   
   return (
     <div className="mainContainer">
@@ -121,11 +132,18 @@ export default function App() {
         {/*
         * If there is no currentAccount render this button
         */}
-        {!currentAccount && (
+        {!currentAccount? (
           <button className="waveButton" onClick={connectWallet}>
             Connect Wallet
           </button>
-        )}
+        ):
+        <div className="connectedButton">
+          <p>Wallet Connected</p>
+        </div> 
+        }
+        <div className="status">
+          <p>{status}</p>
+        </div>
       </div>
     </div>
   );
