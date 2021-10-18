@@ -12,7 +12,7 @@ export default function App() {
   const [status, setStatus] = useState("");
   const [message, setMessage] = useState("");
 
-  const contractAddress = '0xB839718D63B1918BFacE1987862D121417C602dD';
+  const contractAddress = '0xd942155A57E6FeF0DFbE8F2ADb3C034f8C861fC2';
   const contractABI = abi.abi;
 
   const updateStatus = (msg) => {
@@ -59,7 +59,6 @@ export default function App() {
          */
         const waves = await wavePortalContract.getAllWaves();
         
-
         /*
          * We only need address, timestamp, and message in our UI so let's
          * pick those out
@@ -77,6 +76,19 @@ export default function App() {
          * Store our data in React State
          */
         setAllWaves(wavesCleaned);
+
+        /**
+         * Listen in for emitter events!
+         */
+        wavePortalContract.on("NewWave", (from, timestamp, message) => {
+          console.log("NewWave", from, timestamp, message);
+
+          setAllWaves(prevState => [...prevState, {
+            address: from,
+            timestamp: new Date(timestamp * 1000),
+            message: message
+          }]);
+        });
       } else {
         console.log("Ethereum object doesn't exist!")
       }
@@ -100,7 +112,7 @@ export default function App() {
           /*
           * Execute the actual wave from your smart contract
           */
-          const waveTxn = await wavePortalContract.wave(message);
+          const waveTxn = await wavePortalContract.wave(message, {gasLimit: 500000});
           updateStatus(`Mining... ${waveTxn.hash}`);
           setMessage("");
   
@@ -110,7 +122,7 @@ export default function App() {
           count = await wavePortalContract.getTotalWaves();
           updateStatus(`Retrieved total wisdom count... ${count.toNumber()}`);
 
-          getAllWaves();
+          // getAllWaves();
         } else {
           console.log("Ethereum object doesn't exist!");
         }
@@ -182,7 +194,7 @@ export default function App() {
             setMessage(e.target.value);
             }} 
           value={message} 
-          placeholder="Teach Me Some Words of Wisdom"/>
+          placeholder={`Teach Me Some Words of Wisdom.`}/>
         <button className="waveButton" onClick={wave}>
           Click to Send. Hakuna Matata!
         </button>
